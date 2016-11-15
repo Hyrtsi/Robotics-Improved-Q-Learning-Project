@@ -62,9 +62,9 @@ iterateList = [yGoal xGoal];
 % ---------------------------------------- %
 
 
-JaakkoCondition = 0;            % Placeholder...
+complete = 0;            % Placeholder...
 
-while (JaakkoCondition == 0)
+while (complete == 0)
     
 
     for idx = 1:size(iterateList,1)
@@ -133,13 +133,9 @@ while (JaakkoCondition == 0)
         end
     end
 
-    % We have run through iterateList...
-    1+1
-
-    % Update JaakkoCondition here!
+    % Checking exit condition
+    complete = checkComplete(L,obstacles);
         
 end
-
-    
-
+sprintf('Complete!')
 
