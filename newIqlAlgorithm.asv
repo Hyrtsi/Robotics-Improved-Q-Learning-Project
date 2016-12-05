@@ -152,12 +152,7 @@ direction = -1;         % INIT
 
 path = [];
 
-
-
-
 while ismember(currentState, goalState, 'rows') == 0
-    
-    clear max;
     
     neighborList = getNeighbors(currentState, ySize, xSize);
     
@@ -167,44 +162,24 @@ while ismember(currentState, goalState, 'rows') == 0
     % Determine the number of best states
     
     
-    neighborValues = getValues(Q, neighborList);
+    neighborQvalues = getValues(Q, neighborList);
     
-    %tempList = sort(neighborValues);
-    [notUsefulValue,idx] = max(neighborValues);
-    indices = find(neighborValues >= neighborValues(idx));
     
-    % Ok now we know 1 to 4 indices for equal best choices
-    % Minimize the amount of turns
+    
     
     
     
     
     if direction == -1
-        indices
-        nextState = neighborList(indices(1),:)
-        newDirection = getDirection(currentState, nextState)
-    else
-       for i = 1:size(indices,1)
-           tempDirection = getDirection(currentState, neighborList(i,:));
-           if mod(tempDirection - direction, 3) < 2
-               newDirection = tempDirection;
-               chosenIndex = i;
-           end
-       end
-       
-       nextState = neighborList(chosenIndex,:);
+        [maxvalue,argmax] = max(neighborQvalues);
+    else       
+        % Get the direction from currentState to nextState
+        
+    
     end
-   
-
-    direction = newDirection;
     
-    
-    
-    
-    
-    
-    
-    
+    newDirection = getDirection(currentState, nextState);
+    nextState = neighborList(argmax,:);
     
 
     

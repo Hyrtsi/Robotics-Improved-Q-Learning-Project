@@ -1,7 +1,7 @@
 function [complete] = checkComplete(L,O)
 L_temp = L;
 
-for i = 1:length(O)
+for i = 1:size(O, 1)
     L_temp(O(i,1),O(i,2))= 1;
 end
 
