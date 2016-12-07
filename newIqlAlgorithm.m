@@ -1,6 +1,7 @@
 %IQL Algorithm
 
 clear all;
+clf;
 
 % Grid world configuration:
 % 
@@ -19,8 +20,8 @@ clear all;
 xSize = 8;
 ySize = 8;
 
-xGoal = 5;
-yGoal = 3;
+xGoal = 6;
+yGoal = 6;
 
 xInit = 1;
 yInit = 1;
@@ -43,7 +44,7 @@ goalPoint = [yGoal xGoal];
 %obstacles = [1 1; 1 2; 1 3; 1 4; 1 5; 2 1; 3 1; 4 1; 2 2];
 
 
-obstacles = [3 3];
+obstacles = [3 3; 2 3; 4 3; 6 3; 7 3];
 %obstacles = [3 3; 2 2; 4 3];
 %obstacles = [2 2; 3 1; 4 1; 5 1; 5 2];
 
@@ -66,31 +67,9 @@ iterateList = [yGoal xGoal];
 complete = 0;
 
 while (complete == 0)
-
-    % We might have a huge problem in the current implementation because
-    % the size of iterateList is changing over the runs...
-    
-    % Changed to while-loop which should work.
-    % This is a huge design issue and somehow it works for size (5,5) but
-    % not other sizes. Poor!
-    
-    
-    %for idx = 1:size(iterateList,1)            % OLD
     while size(iterateList,1) > 0
-        
-        % For debugging:
-        
-        %size(iterateList,1)
-        %idx
-        %iterateList(idx,:)
-        
-        
-        
-        %state = iterateList(idx,:);            % OLD
-        state = iterateList(1,:);               % Always pick the first :)
-        
-        
-        
+        state = iterateList(1,:);               % Always pick the first
+
         % This loop runs through all elements of iterateList
         % Weird syntax - double check that it works!
 
@@ -182,8 +161,12 @@ direction = -1;         % INIT
 path = [yInit xInit];
 
 
-maxIterations = 1e4;
+maxIterations = 1e3;
 iterationIndex = 0;
+
+
+TempQ = Q;
+
 
 while ismember(currentState, goalState, 'rows') == 0
     
@@ -196,20 +179,21 @@ while ismember(currentState, goalState, 'rows') == 0
     
     clear max;
     
-    neighborList = getNeighbors(currentState, ySize, xSize);
+    % Neighbors of the current state
+    neighborListRaw = getNeighbors(currentState, ySize, xSize); %OK
     
     % The following function removes obstacles from neighbors
-    neighborList = removeFromList(neighborList, obstacles);
+    neighborList = removeFromList(neighborListRaw, obstacles); % OK
     
-   
+
     % Q-values of the neighbors
-    neighborValues = getValues(Q, neighborList);
+    neighborValues = getValues(TempQ, neighborList); %OK
     
     % Determine if we have multiple equally best choices
-    indices = find(neighborValues >= max(neighborValues));
+    indices = find(neighborValues >= max(neighborValues)); % OK
     
-    % Now we know 1 to 4 indices for equal best choices
-    % Minimize the amount of turns...
+    % Now we know 1 to 2 indices for equal best choices
+    % Minimize the amount of turns in the next loop 
     
     if direction == -1
         % This is the first run only
@@ -217,28 +201,46 @@ while ismember(currentState, goalState, 'rows') == 0
         newDirection = getDirection(currentState, nextState);
     else
         % After the first run
-        bestIndex = -1;
-        bestValue = 1000;
+
         
         for i = 1:size(indices,1)
             
             % The direction from current state to 
             tempDirection = getDirection(currentState, neighborList(indices(i),:));
             
-            % How many times we have to rotate 90deg to get to the state
-            nTurns = mod(tempDirection - direction, 3);
-           
-            if nTurns < bestValue
-                bestValue = nTurns;
+            % BUG: Determine where to go when several 'equal' options
+            if tempDirection == direction
+                newDirection = tempDirection;
                 bestIndex = indices(i);
+                break
+            else % Debug this shit
+                dirPool1 = [1; 3];
+                dirPool2 = [0; 2];
+                
+                if direction == 0 || direction == 2
+                    randomIndex = randi(2,1,1);
+                    newDirection = dirPool1(randomIndex);
+                else
+                    randomIndex = randi(2,1,1);
+                    newDirection = dirPool2(randomIndex);
+                end
             end
 
         end
-          
-        newDirection = tempDirection;
+        
         nextState = neighborList(bestIndex,:);
     end
 
+    
+    % % %
+    %nextState = neighborList(indices(1),:);         % DEBUGGING
+    % % %
+    
+    
+    
+    % We permit going the same route until it is necessary
+    TempQ(nextState(1), nextState(2)) = 0;
+    
     direction = newDirection;
     
     currentState = nextState;
@@ -249,6 +251,13 @@ end
 if iterationIndex < maxIterations
     sprintf('Path Planning Complete!')
 end
+
+
+
+
+% % % % % % % % % % % % % % % % % % % % % % % % %
+
+
 
 
 
@@ -264,8 +273,8 @@ for i = 1:size(obstacles,1)
 end
 legend('Initial location', 'Goal', 'Chosen path', 'Obstacles')
 grid on;
-xlim([-1 xSize + 1])
-ylim([-1 ySize + 1])
+xlim([0 xSize + 1])
+ylim([0 ySize + 1])
 
 title('IQL Algorithm Test Run')
 xlabel('x')
