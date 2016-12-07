@@ -1,5 +1,6 @@
 %IQL Algorithm
 
+clear all;
 
 % Grid world configuration:
 % 
@@ -15,8 +16,8 @@
 
 % ------------------------------------------------------
 
-xSize = 5;
-ySize = 5;
+xSize = 8;
+ySize = 8;
 
 xGoal = 5;
 yGoal = 3;
@@ -41,14 +42,20 @@ goalPoint = [yGoal xGoal];
 %obstacles = [1 1; 5 5; 3 4;2 3; 5 1];
 %obstacles = [1 1; 1 2; 1 3; 1 4; 1 5; 2 1; 3 1; 4 1; 2 2];
 
-%obstacles = [2 2; 3 1; 4 1; 5 1; 5 2];
-    
+
 obstacles = [3 3];
+%obstacles = [3 3; 2 2; 4 3];
+%obstacles = [2 2; 3 1; 4 1; 5 1; 5 2];
+
+
+
+
+
 
 discount = 0.5;         % Initialize me!
 
 
-% Initialize iterateList = " All states s for which all neighbors are not locked"
+% Initialize iterateList = " All states s for which all neighbors are not locked "
 
 iterateList = [yGoal xGoal];
 
@@ -56,19 +63,41 @@ iterateList = [yGoal xGoal];
 % ---------------------------------------- %
 
 
-complete = 0;            % Placeholder...
+complete = 0;
 
 while (complete == 0)
-    
 
-    for idx = 1:size(iterateList,1)
-        state = iterateList(idx,:);
+    % We might have a huge problem in the current implementation because
+    % the size of iterateList is changing over the runs...
+    
+    % Changed to while-loop which should work.
+    % This is a huge design issue and somehow it works for size (5,5) but
+    % not other sizes. Poor!
+    
+    
+    %for idx = 1:size(iterateList,1)            % OLD
+    while size(iterateList,1) > 0
+        
+        % For debugging:
+        
+        %size(iterateList,1)
+        %idx
+        %iterateList(idx,:)
+        
+        
+        
+        %state = iterateList(idx,:);            % OLD
+        state = iterateList(1,:);               % Always pick the first :)
+        
+        
+        
         % This loop runs through all elements of iterateList
         % Weird syntax - double check that it works!
 
         % The next list contains (y,x) coordinates of neighbors, 1-4x
         neighborList = getNeighbors(state, ySize, xSize);
 
+        % Update all the neighbors of current state
         for i = 1:size(neighborList, 1)
             neighbor = neighborList(i,:);
             xPresent = state(2);
@@ -106,6 +135,7 @@ while (complete == 0)
 
             % L, Q updated.
 
+            % Add necessary neighbors to be processed next
             if allNeighborsLocked(neighbor, L, ySize, xSize) == 0
                 iterateList = [iterateList; neighbor];
             end
@@ -115,7 +145,6 @@ while (complete == 0)
         % At this point the following should ALWAYS be true
 
         if allNeighborsLocked(state, L, ySize, xSize) == 1
-
             % We remove current state from iterateList:
 
             LIA = ismember(iterateList, state, 'rows');
@@ -150,12 +179,20 @@ goalState = [yGoal xGoal];
 
 direction = -1;         % INIT
 
-path = [];
+path = [yInit xInit];
 
 
-
+maxIterations = 1e4;
+iterationIndex = 0;
 
 while ismember(currentState, goalState, 'rows') == 0
+    
+    iterationIndex = iterationIndex + 1;
+    
+    if iterationIndex > maxIterations
+        sprintf('Path planning stuck!')
+        break
+    end
     
     clear max;
     
@@ -204,22 +241,33 @@ while ismember(currentState, goalState, 'rows') == 0
 
     direction = newDirection;
     
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
     currentState = nextState;
     path = [path; currentState];
     
 end
 
+if iterationIndex < maxIterations
+    sprintf('Path Planning Complete!')
+end
 
 
 
+% We will plot this very poorly...
+
+
+hold on;
+plot(xInit, yInit, 'b*')
+plot(xGoal, yGoal, 'm*')
+plot(path(:,2), path(:,1), 'k-')
+for i = 1:size(obstacles,1)
+   plot(obstacles(i,2), obstacles(i,1), 'r*')
+end
+legend('Initial location', 'Goal', 'Chosen path', 'Obstacles')
+grid on;
+xlim([-1 xSize + 1])
+ylim([-1 ySize + 1])
+
+title('IQL Algorithm Test Run')
+xlabel('x')
+ylabel('y')
 
