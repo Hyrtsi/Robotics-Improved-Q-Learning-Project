@@ -164,37 +164,43 @@ while ismember(currentState, goalState, 'rows') == 0
     % The following function removes obstacles from neighbors
     neighborList = removeFromList(neighborList, obstacles);
     
-    % Determine the number of best states
-    
-    
+   
+    % Q-values of the neighbors
     neighborValues = getValues(Q, neighborList);
     
-    %tempList = sort(neighborValues);
-    [notUsefulValue,idx] = max(neighborValues);
-    indices = find(neighborValues >= neighborValues(idx));
+    % Determine if we have multiple equally best choices
+    indices = find(neighborValues >= max(neighborValues));
     
-    % Ok now we know 1 to 4 indices for equal best choices
-    % Minimize the amount of turns
-    
-    
-    
+    % Now we know 1 to 4 indices for equal best choices
+    % Minimize the amount of turns...
     
     if direction == -1
-        indices
-        nextState = neighborList(indices(1),:)
-        newDirection = getDirection(currentState, nextState)
+        % This is the first run only
+        nextState = neighborList(indices(1),:);
+        newDirection = getDirection(currentState, nextState);
     else
-       for i = 1:size(indices,1)
-           tempDirection = getDirection(currentState, neighborList(i,:));
-           if mod(tempDirection - direction, 3) < 2
-               newDirection = tempDirection;
-               chosenIndex = i;
-           end
-       end
-       
-       nextState = neighborList(chosenIndex,:);
+        % After the first run
+        bestIndex = -1;
+        bestValue = 1000;
+        
+        for i = 1:size(indices,1)
+            
+            % The direction from current state to 
+            tempDirection = getDirection(currentState, neighborList(indices(i),:));
+            
+            % How many times we have to rotate 90deg to get to the state
+            nTurns = mod(tempDirection - direction, 3);
+           
+            if nTurns < bestValue
+                bestValue = nTurns;
+                bestIndex = indices(i);
+            end
+
+        end
+          
+        newDirection = tempDirection;
+        nextState = neighborList(bestIndex,:);
     end
-   
 
     direction = newDirection;
     
