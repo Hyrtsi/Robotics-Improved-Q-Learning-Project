@@ -42,12 +42,26 @@ goalPoint = [yGoal xGoal];
 %obstacles = [2 2; 3 2; 3 4];
 %obstacles = [1 1; 5 5; 3 4;2 3; 5 1];
 %obstacles = [1 1; 1 2; 1 3; 1 4; 1 5; 2 1; 3 1; 4 1; 2 2];
-
-
-obstacles = [3 3; 2 3; 4 3; 6 3; 7 3];
 %obstacles = [3 3; 2 2; 4 3];
-%obstacles = [2 2; 3 1; 4 1; 5 1; 5 2];
 
+% To test behavior when confronting a wall.
+%obstacles = [3 3; 2 3; 4 3; 6 3; 7 3; 8 3; 5 3; 1 6];
+
+% To emerge maze-like turning behavior
+% Note that with this kind of obstacles, the chosen path is far from
+% optimal. Why does the algorithm do this? Does it fall into a local
+% maximum? Note that there is one turning back right at the beginning. See
+% the next example for more discussion.
+obstacles = [2 2; 3 1; 1 4; 3 3; 2 5; 6 4; 5 5; 6 3; 6 2; 5 2];
+
+% Here, we have shown that the elimination of turning back does no
+% difference. We see that at (4,4) the algorithm rather selects the route
+% with less turning than sees the big picture. Indeed, the algorithm falls
+% for local solutions.
+% 1) Is this expected for the algorithm?
+% 2) How do we improve our solution? ( = either implement the algorithm correctly
+% or improve the algorithm )
+obstacles = [2 1; 2 2; 3 1; 1 4; 3 3; 2 5; 6 4; 5 5; 6 3; 6 2; 5 2];
 
 
 
@@ -63,6 +77,8 @@ iterateList = [yGoal xGoal];
 
 % ---------------------------------------- %
 
+
+tic;
 
 complete = 0;
 
@@ -138,7 +154,7 @@ while (complete == 0)
 end
 sprintf('Q-Table Complete!')
 
-
+toc;
 
 
 % % % % 
@@ -202,38 +218,31 @@ while ismember(currentState, goalState, 'rows') == 0
     else
         % After the first run
 
+        % The following variable is for finding the least amount of turns
+        % required. Initialized to a "big" number.
+        leastTurns = 1000;
         
         for i = 1:size(indices,1)
             
             % The direction from current state to 
             tempDirection = getDirection(currentState, neighborList(indices(i),:));
             
-            % BUG: Determine where to go when several 'equal' options
-            if tempDirection == direction
+            % Amount of turns required from current direction to the new direction
+            nTurns = calculateTurns(direction, tempDirection);
+            
+            % A simple method for finding which of the two directions takes
+            % less turns.
+            if nTurns < leastTurns
+                leastTurns = nTurns;
                 newDirection = tempDirection;
-                bestIndex = indices(i);
-                break
-            else % Debug this shit
-                dirPool1 = [1; 3];
-                dirPool2 = [0; 2];
-                
-                if direction == 0 || direction == 2
-                    randomIndex = randi(2,1,1);
-                    newDirection = dirPool1(randomIndex);
-                else
-                    randomIndex = randi(2,1,1);
-                    newDirection = dirPool2(randomIndex);
-                end
+                nextState = neighborList(indices(i),:);
             end
-
         end
-        
-        nextState = neighborList(bestIndex,:);
     end
 
     
     % % %
-    %nextState = neighborList(indices(1),:);         % DEBUGGING
+    %nextState = neighborList(indices(1),:);         % For debugging
     % % %
     
     
