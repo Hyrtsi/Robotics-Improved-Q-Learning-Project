@@ -1,21 +1,15 @@
-%IQL Algorithm
+% IQL Algorithm
 
 clear all;
 clf;
 
-% Grid world configuration:
-% 
-% We should let the matrices be n*m
-%
 % Note: we follow Matlab syntax and address the matrices as follows:
 %
 % M(y,x) <<--- " y first then x "
 
-% Semi-poor design: we have put the boundary check into takeAction function
-% to avoid doing it here. Price-tag = giving xSize, ySize as a parameter
-
-
 % ------------------------------------------------------
+
+% Initial values
 
 xSize = 8;
 ySize = 8;
@@ -36,43 +30,44 @@ initialPoint = [yInit xInit];
 currentPoint = initialPoint;
 goalPoint = [yGoal xGoal];
 
+% In the current implementation, discount actually makes no difference.
+discount = 0.5;
 
-% The following are (not very interesting) testcases.
+% Initialize iterateList = " All states s for which all neighbors are not locked "
+iterateList = [yGoal xGoal];
 
-%obstacles = [2 2; 3 2; 3 4];
-%obstacles = [1 1; 5 5; 3 4;2 3; 5 1];
-%obstacles = [1 1; 1 2; 1 3; 1 4; 1 5; 2 1; 3 1; 4 1; 2 2];
-%obstacles = [3 3; 2 2; 4 3];
 
-% To test behavior when confronting a wall.
-%obstacles = [3 3; 2 3; 4 3; 6 3; 7 3; 8 3; 5 3; 1 6];
+
+% % Obstacle configurations % %
+
+
+% To test behavior when confronting a wall - or two!
+
+wall1 = [3 3; 2 3; 4 3; 6 3; 7 3; 8 3; 5 3; 1 6];
+wall2 = [1 5; 2 5; 3 5; 4 5; 5 5; 6 5; 7 5];
+
+%obstacles = [wall1; wall2];
 
 % To emerge maze-like turning behavior
+%
 % Note that with this kind of obstacles, the chosen path is far from
-% optimal. Why does the algorithm do this? Does it fall into a local
-% maximum? Note that there is one turning back right at the beginning. See
-% the next example for more discussion.
-obstacles = [2 2; 3 1; 1 4; 3 3; 2 5; 6 4; 5 5; 6 3; 6 2; 5 2];
-
-% Here, we have shown that the elimination of turning back does no
-% difference. We see that at (4,4) the algorithm rather selects the route
+% optimal.
+% We see that at (4,4) the algorithm rather selects the route
 % with less turning than sees the big picture. Indeed, the algorithm falls
 % for local solutions.
 % 1) Is this expected for the algorithm?
 % 2) How do we improve our solution? ( = either implement the algorithm correctly
 % or improve the algorithm )
-obstacles = [2 1; 2 2; 3 1; 1 4; 3 3; 2 5; 6 4; 5 5; 6 3; 6 2; 5 2];
+%obstacles = [2 2; 3 1; 1 4; 3 3; 2 5; 6 4; 5 5; 6 3; 6 2; 5 2];
 
 
 
 
 
-discount = 0.5;         % Initialize me!
 
 
-% Initialize iterateList = " All states s for which all neighbors are not locked "
 
-iterateList = [yGoal xGoal];
+
 
 
 % ---------------------------------------- %
@@ -85,9 +80,6 @@ complete = 0;
 while (complete == 0)
     while size(iterateList,1) > 0
         state = iterateList(1,:);               % Always pick the first
-
-        % This loop runs through all elements of iterateList
-        % Weird syntax - double check that it works!
 
         % The next list contains (y,x) coordinates of neighbors, 1-4x
         neighborList = getNeighbors(state, ySize, xSize);
@@ -158,31 +150,32 @@ toc;
 
 
 % % % % 
-% Begin path planning phase
+% Path planning
 % % % %
 
 
 
-% With a given Q-table, the following algorihtm makes a path of it.
-% We introduce another quality: direction
-% Direction = [0,1,2,3]
+% With a given Q-table, the following algorithm generates a path of it.
 
-
+% Initialization
 initState = [yInit xInit];
 currentState = initState;
 goalState = [yGoal xGoal];
+direction = -1;
 
-direction = -1;         % INIT
-
+% We save the chosen path
 path = [yInit xInit];
 
-
+% To prevent too long runs
 maxIterations = 1e3;
 iterationIndex = 0;
 
-
+% Make a copy of the Q-table to be able to compare
 TempQ = Q;
 
+
+
+tic;
 
 while ismember(currentState, goalState, 'rows') == 0
     
@@ -196,17 +189,17 @@ while ismember(currentState, goalState, 'rows') == 0
     clear max;
     
     % Neighbors of the current state
-    neighborListRaw = getNeighbors(currentState, ySize, xSize); %OK
+    neighborListRaw = getNeighbors(currentState, ySize, xSize);
     
     % The following function removes obstacles from neighbors
-    neighborList = removeFromList(neighborListRaw, obstacles); % OK
+    neighborList = removeFromList(neighborListRaw, obstacles);
     
 
     % Q-values of the neighbors
-    neighborValues = getValues(TempQ, neighborList); %OK
+    neighborValues = getValues(TempQ, neighborList);
     
     % Determine if we have multiple equally best choices
-    indices = find(neighborValues >= max(neighborValues)); % OK
+    indices = find(neighborValues >= max(neighborValues));
     
     % Now we know 1 to 2 indices for equal best choices
     % Minimize the amount of turns in the next loop 
@@ -240,13 +233,6 @@ while ismember(currentState, goalState, 'rows') == 0
         end
     end
 
-    
-    % % %
-    %nextState = neighborList(indices(1),:);         % For debugging
-    % % %
-    
-    
-    
     % We permit going the same route until it is necessary
     TempQ(nextState(1), nextState(2)) = 0;
     
@@ -257,20 +243,20 @@ while ismember(currentState, goalState, 'rows') == 0
     
 end
 
+
+
+
 if iterationIndex < maxIterations
     sprintf('Path Planning Complete!')
 end
 
+toc;
 
 
 
 % % % % % % % % % % % % % % % % % % % % % % % % %
 
-
-
-
-
-% We will plot this very poorly...
+% Plotting the path
 
 
 hold on;
